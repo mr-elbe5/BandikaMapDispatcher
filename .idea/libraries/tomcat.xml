@@ -1,0 +1,12 @@
+<component name="libraryTable">
+  <library name="tomcat">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/libs/catalina.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jasper.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/jsp-api.jar!/" />
+      <root url="jar://$PROJECT_DIR$/libs/servlet-api.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
