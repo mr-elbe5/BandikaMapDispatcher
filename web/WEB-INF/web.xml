@@ -5,6 +5,13 @@
                       http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
     version="3.0">
     <servlet>
+        <!--suppress ServletWithoutMappingInspection -->
+        <servlet-name>initServlet</servlet-name>
+        <servlet-class>de.elbe5.mapdispatcher.InitServlet</servlet-class>
+        <load-on-startup>10</load-on-startup>
+    </servlet>
+
+    <servlet>
         <servlet-name>map</servlet-name>
         <servlet-class>de.elbe5.mapdispatcher.MapServlet</servlet-class>
     </servlet>

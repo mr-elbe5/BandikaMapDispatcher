@@ -8,15 +8,23 @@
  */
 package de.elbe5.mapdispatcher;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import de.elbe5.application.Configuration;
+import de.elbe5.base.log.Log;
 
-public abstract class InitServlet extends MapServlet {
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
+
+public class InitServlet extends MapServlet {
 
     @Override
-    protected void processRequest(String method, HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.sendError(HttpServletResponse.SC_NOT_FOUND);
+    public void init(ServletConfig servletConfig) throws ServletException {
+        super.init(servletConfig);
+        System.out.println("initializing BandikaMapDispatcher Application...");
+        Log.initLog("BandikaMapDispatcher");
+        ServletContext context=servletConfig.getServletContext();
+        Configuration.setConfigs(context);
+        Log.log("BandikaMapDispatcher initialized");
     }
 
 }

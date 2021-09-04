@@ -8,27 +8,143 @@
  */
 package de.elbe5.mapdispatcher;
 
+import de.elbe5.application.Configuration;
+import de.elbe5.base.log.Log;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import java.io.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.util.NoSuchElementException;
+import java.util.StringTokenizer;
 
 public class MapServlet extends HttpServlet {
 
-    public final static String GET = "GET";
-    public final static String POST = "POST";
-
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        processRequest(GET,request, response);
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) {
+        StringTokenizer stk = new StringTokenizer(request.getRequestURI(), "/.");
+        if (stk.countTokens() != 5){
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        Tile tile = new Tile();
+        try {
+            tile.type = TileType.valueOf(stk.nextToken());
+        }
+        catch (NoSuchElementException e) {
+            Log.error("bad tile type", e);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        try{
+            tile.zoom = Integer.parseInt(stk.nextToken());
+            tile.x = Integer.parseInt(stk.nextToken());
+            tile.y = Integer.parseInt(stk.nextToken());
+        }
+        catch (NumberFormatException e) {
+            Log.error("bad tile parameter format", e);
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        tile.extension = stk.nextToken().toLowerCase();
+        if (!tile.extension.equals("png")){
+            Log.error("tile requests no png");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            return;
+        }
+        if (!sendLocalFile(tile, response)){
+            if (!getRemoteFile(tile)){
+                Log.error("could not get remote file");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            if (!sendLocalFile(tile, response)){
+                Log.error("could not send remote file as local");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
+        }
     }
 
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        processRequest(POST, request, response);
+    protected boolean sendLocalFile(Tile tile, HttpServletResponse response){
+        String path = Configuration.getLocalPath() + tile.getTypedUri();
+        Log.info(path);
+        File file = new File(path);
+        if (!file.exists() || file.length() == 0) {
+            return false;
+        }
+        try {
+            response.setContentType("image/" + tile.extension);
+            response.setHeader("Content-Disposition", "filename=\"" + file.getName() + '"');
+            response.setHeader("Content-Length", Long.toString(file.length()));
+            OutputStream out = response.getOutputStream();
+            FileInputStream fin = new FileInputStream(file);
+            byte[] bytes = new byte[4096];
+            int len = 4096;
+            while (len > 0) {
+                len = fin.read(bytes, 0, 4096);
+                if (len > 0) {
+                    out.write(bytes, 0, len);
+                }
+            }
+            out.flush();
+            fin.close();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
-    void processRequest(String method, HttpServletRequest request, HttpServletResponse response) throws IOException{
-
+    protected boolean getRemoteFile(Tile tile) {
+        try {
+            String url = Configuration.getDefaultMapServerUri() + tile.getUri();
+            Log.info("requesting " + url);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofMinutes(2))
+                    .build();
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .followRedirects(HttpClient.Redirect.NORMAL)
+                    .connectTimeout(Duration.ofSeconds(20))
+                    .build();
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            if (response.statusCode() != 200){
+                Log.error("remote server returned status " + response.statusCode());
+                return false;
+            }
+            String path = Configuration.getLocalPath() + tile.getTypedUri();
+            Log.info(path);
+            File file = new File(path);
+            try {
+                if (file.exists() && !file.delete()) {
+                    Log.error("could not delete file " + path);
+                    return false;
+                }
+                if (!file.getParentFile().mkdirs()) {
+                    Log.error("could create directories for " + path);
+                    return false;
+                }
+                if (!file.createNewFile())
+                    throw new IOException("file create error");
+                FileOutputStream fout = new FileOutputStream(file);
+                fout.write(response.body());
+                fout.flush();
+                fout.close();
+            } catch (IOException e) {
+                Log.error("could not write file " + path);
+                return false;
+            }
+        }
+        catch (IOException | InterruptedException e){
+            Log.error("could not receive remote file", e);
+            return false;
+        }
+        return true;
     }
+
 }
