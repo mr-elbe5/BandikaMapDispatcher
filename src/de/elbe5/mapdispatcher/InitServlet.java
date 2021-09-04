@@ -24,6 +24,8 @@ public class InitServlet extends MapServlet {
         Log.initLog("BandikaMapDispatcher");
         ServletContext context=servletConfig.getServletContext();
         Configuration.setConfigs(context);
+        Log.log("External carto server is " + Configuration.getCartoMapServerUri());
+        Log.log("External topo server is " + Configuration.getTopoMapServerUri());
         Log.log("BandikaMapDispatcher initialized");
     }
 

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Context>
+    <Parameter name="localPath" value="/Users/miro/tmp/pngs/" override="false" />
+    <Parameter name="cartoMapServerUri" value="http://thinkstation/hot/" override="false" />
+    <Parameter name="topoMapServerUri" value="https://a.tile.opentopomap.org/" override="false" />
+</Context>

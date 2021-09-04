@@ -13,25 +13,15 @@ import javax.servlet.ServletContext;
 public class Configuration {
 
     static String localPath = "";
-    static String defaultLocalMaxZoom = "";
-    static String defaultMapServerUri ="";
-    static String topoLocalMaxZoom ="";
+    static String cartoMapServerUri ="";
     static String topoMapServerUri ="";
-
-    public static String getDefaultLocalMaxZoom() {
-        return defaultLocalMaxZoom;
-    }
 
     public static String getLocalPath() {
         return localPath;
     }
 
-    public static String getDefaultMapServerUri() {
-        return defaultMapServerUri;
-    }
-
-    public static String getTopoLocalMaxZoom() {
-        return topoLocalMaxZoom;
+    public static String getCartoMapServerUri() {
+        return cartoMapServerUri;
     }
 
     public static String getTopoMapServerUri() {
@@ -47,9 +37,7 @@ public class Configuration {
 
     public static void setConfigs(ServletContext servletContext) {
         localPath = getSafeInitParameter(servletContext,"localPath");
-        defaultLocalMaxZoom = getSafeInitParameter(servletContext,"defaultLocalMaxZoom");
-        defaultMapServerUri = getSafeInitParameter(servletContext,"defaultMapServerUri");
-        topoLocalMaxZoom = getSafeInitParameter(servletContext,"topoLocalMaxZoom");
+        cartoMapServerUri = getSafeInitParameter(servletContext,"defaultMapServerUri");
         topoMapServerUri = getSafeInitParameter(servletContext,"topoMapServerUri");
     }
 

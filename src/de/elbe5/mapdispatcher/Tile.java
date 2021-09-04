@@ -9,6 +9,8 @@
 
 package de.elbe5.mapdispatcher;
 
+import de.elbe5.application.Configuration;
+
 enum TileType{
     carto,
     topo
@@ -31,5 +33,12 @@ public class Tile {
 
     String getTypedUri(){
         return type.name() + "/" + getUri();
+    }
+
+    String getExternalUri(){
+        return switch (type) {
+            case carto -> Configuration.getCartoMapServerUri() + getUri();
+            case topo -> Configuration.getTopoMapServerUri() + getUri();
+        };
     }
 }

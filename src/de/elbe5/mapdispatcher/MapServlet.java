@@ -72,7 +72,6 @@ public class MapServlet extends HttpServlet {
 
     protected boolean sendLocalFile(Tile tile, HttpServletResponse response){
         String path = Configuration.getLocalPath() + tile.getTypedUri();
-        Log.info(path);
         File file = new File(path);
         if (!file.exists() || file.length() == 0) {
             return false;
@@ -101,16 +100,16 @@ public class MapServlet extends HttpServlet {
 
     protected boolean getRemoteFile(Tile tile) {
         try {
-            String url = Configuration.getDefaultMapServerUri() + tile.getUri();
-            Log.info("requesting " + url);
+            String url = tile.getExternalUri();
+            Log.info("requesting tile from " + url);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
-                    .timeout(Duration.ofMinutes(2))
+                    .timeout(Duration.ofMinutes(5))
                     .build();
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.NORMAL)
-                    .connectTimeout(Duration.ofSeconds(20))
+                    .connectTimeout(Duration.ofSeconds(30))
                     .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() != 200){
@@ -118,15 +117,15 @@ public class MapServlet extends HttpServlet {
                 return false;
             }
             String path = Configuration.getLocalPath() + tile.getTypedUri();
-            Log.info(path);
+            Log.info("received tile from " + url + " - saving as " + path);
             File file = new File(path);
             try {
                 if (file.exists() && !file.delete()) {
                     Log.error("could not delete file " + path);
                     return false;
                 }
-                if (!file.getParentFile().mkdirs()) {
-                    Log.error("could create directories for " + path);
+                if (!assertDirectory(file.getParentFile())) {
+                    Log.error("could not assert directories for " + path);
                     return false;
                 }
                 if (!file.createNewFile())
@@ -145,6 +144,13 @@ public class MapServlet extends HttpServlet {
             return false;
         }
         return true;
+    }
+
+    private boolean assertDirectory(File dir){
+        if (dir.exists()){
+            return true;
+        }
+        return dir.mkdirs();
     }
 
 }
