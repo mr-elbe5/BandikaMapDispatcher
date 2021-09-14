@@ -17,11 +17,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MapServlet extends HttpServlet {
 
@@ -99,17 +102,21 @@ public class MapServlet extends HttpServlet {
     }
 
     protected boolean getRemoteFile(Tile tile) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        HttpClient client;
         try {
             String url = tile.getExternalUri();
             Log.info("requesting tile from " + url);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofMinutes(5))
+                    .setHeader("User-Agent", "Mozilla/5.0 Firefox/92.0")
                     .build();
-            HttpClient client = HttpClient.newBuilder()
+            client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .followRedirects(HttpClient.Redirect.NORMAL)
                     .connectTimeout(Duration.ofSeconds(30))
+                    .executor(executor)
                     .build();
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             if (response.statusCode() != 200){
@@ -142,6 +149,11 @@ public class MapServlet extends HttpServlet {
         catch (IOException | InterruptedException e){
             Log.error("could not receive remote file", e);
             return false;
+        }
+        finally{
+            executor.shutdownNow();
+            client = null;
+            System.gc();
         }
         return true;
     }
