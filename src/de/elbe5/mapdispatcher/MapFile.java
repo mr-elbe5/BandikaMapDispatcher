@@ -1,5 +1,5 @@
 /*
- Bandika CMS - A Java based modular Content Management System
+ Bandika MapDispatcher - a proxy and preloader for OSM map tiles
  Copyright (C) 2009-2021 Michael Roennau
 
  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
@@ -49,7 +49,6 @@ public class MapFile  {
         byte[] bytes;
         ExecutorService executor = Executors.newSingleThreadExecutor();
         try {
-            Log.info("requesting tile from " + url);
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .timeout(Duration.ofMinutes(5))
@@ -66,7 +65,6 @@ public class MapFile  {
                 Log.error("remote server returned status " + response.statusCode());
                 return null;
             }
-            Log.info("received tile from " + url);
             bytes = response.body();
         }
         catch (IOException | InterruptedException e){

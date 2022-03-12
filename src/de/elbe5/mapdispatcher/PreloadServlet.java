@@ -1,5 +1,5 @@
 /*
- Bandika CMS - A Java based modular Content Management System
+ Bandika MapDispatcher - a proxy and preloader for OSM map tiles
  Copyright (C) 2009-2021 Michael Roennau
 
  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
@@ -10,10 +10,11 @@ package de.elbe5.mapdispatcher;
 
 import de.elbe5.request.RequestData;
 
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-public class PreloadServlet extends MapServlet {
+public class PreloadServlet extends HttpServlet {
 
     static Preloader preloader = new Preloader();
 
@@ -33,18 +34,10 @@ public class PreloadServlet extends MapServlet {
         rdata.init();
         String action = rdata.getString("action");
         switch (action) {
-            case "start":
-                preloader.startPreload(rdata, response);
-                break;
-            case "stop":
-                preloader.stopPreload(rdata, response);
-                break;
-            case "getState":
-                preloader.getState(response);
-                break;
-            default:
-                preloader.showPreload(rdata, response);
-                break;
+            case "start" -> preloader.startPreload(rdata, response);
+            case "stop" -> preloader.stopPreload(response);
+            case "getState" -> preloader.getState(response);
+            default -> preloader.showPreload(rdata, response);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- Bandika CMS - A Java based modular Content Management System
+ Bandika MapDispatcher - a proxy and preloader for OSM map tiles
  Copyright (C) 2009-2021 Michael Roennau
 
  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
@@ -219,30 +219,6 @@ public class RequestData extends KeyValueMap {
         }
         return null;
     }
-
-    /************** request attributes ***************/
-
-    public void setRequestObject(String key, Object obj){
-        request.setAttribute(key, obj);
-    }
-
-    public Object getRequestObject(String key){
-        return request.getAttribute(key);
-    }
-
-    public <T> T getRequestObject(String key, Class<T> cls) {
-        try {
-            return cls.cast(request.getAttribute(key));
-        }
-        catch (NullPointerException | ClassCastException e){
-            return null;
-        }
-    }
-
-    public void removeRequestObject(String key){
-        request.removeAttribute(key);
-    }
-
 
 }
 

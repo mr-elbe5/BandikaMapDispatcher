@@ -25,6 +25,7 @@
         <url-pattern>/preload</url-pattern>
     </servlet-mapping>
 
+    <!-- there should be no static pngs in use -->
     <servlet-mapping>
         <servlet-name>proxy</servlet-name>
         <url-pattern>*.png</url-pattern>

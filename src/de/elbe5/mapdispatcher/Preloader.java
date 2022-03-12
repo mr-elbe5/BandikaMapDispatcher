@@ -1,5 +1,5 @@
 /*
- Bandika CMS - A Java based modular Content Management System
+ Bandika MapDispatcher - a proxy and preloader for OSM map tiles
  Copyright (C) 2009-2021 Michael Roennau
 
  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
@@ -33,10 +33,10 @@ public class Preloader {
     int minY = 0;
     int maxY = 0;
 
-    int allTiles = 0;
-    int presentTiles = 0;
-    int fetchedTiles = 0;
-    int errors = 0;
+    long allTiles = 0;
+    long presentTiles = 0;
+    long fetchedTiles = 0;
+    long errors = 0;
 
     String state = STATE_IDLE;
 
@@ -52,7 +52,9 @@ public class Preloader {
         if (this.maxY == -1){
             this.maxY = (int) Math.pow(2.0, this.z) - 1;
         }
-        allTiles = (this.maxX - this.minX + 1) * (this.maxY - this.minY + 1);
+        long fx = this.maxX - this.minX + 1;
+        long fy = this.maxY - this.minY + 1;
+        allTiles = fx*fy;
         presentTiles = 0;
         fetchedTiles = 0;
         errors = 0;
@@ -73,30 +75,31 @@ public class Preloader {
         initValues(rdata.getInt("zoom", 0), rdata.getInt("minX", 0), rdata.getInt("maxX", -1), rdata.getInt("minY", 0), rdata.getInt("maxY", -1));
         preloadThread = new PreloadThread();
         rdata.put("started", Boolean.toString(true));
-        rdata.put("allTiles", Integer.toString(allTiles));
+        rdata.put("allTiles", Long.toString(allTiles));
         preloadThread.start();
         showPreload(rdata, response);
     }
 
-    void stopPreload(RequestData rdata, HttpServletResponse response) {
+    void stopPreload(HttpServletResponse response) {
         if (preloadThread != null && state.equals(STATE_RUNNING)){
-            preloadThread.interrupt();
-            preloadThread = null;
-            state = STATE_IDLE;
+            preloadThread.signalStop();
         }
-        JSONObject obj = new JSONObject();
-        obj.put("state", state);
-        String json = obj.toJSONString();
-        sendJson(json, response);
+        getState(response);
     }
 
+    void preloadStopped(){
+        state = STATE_IDLE;
+        preloadThread = null;
+        Log.info("preloader stopped");
+    }
+
+    @SuppressWarnings("unchecked")
     void getState(HttpServletResponse response){
-        Log.info("returning state");
         JSONObject obj = new JSONObject();
         obj.put("state", state);
-        obj.put("present", presentTiles);
-        obj.put("fetched", fetchedTiles);
-        obj.put("errors", errors);
+        obj.put("present", Long.toString(presentTiles));
+        obj.put("fetched", Long.toString(fetchedTiles));
+        obj.put("errors", Long.toString(errors));
         String json = obj.toJSONString();
         sendJson(json, response);
     }
@@ -113,7 +116,6 @@ public class Preloader {
             response.setHeader("Content-Length", Integer.toString(bytes.length));
             out.write(bytes);
             out.flush();
-            //Log.info("json has been sent");
         } catch (IOException ioe) {
             Log.error("json response error", ioe);
         }
@@ -130,20 +132,24 @@ public class Preloader {
 
     class PreloadThread extends Thread{
 
+        private boolean shouldStop = false;
+
+        void signalStop(){
+            shouldStop = true;
+        }
+
         @Override
         public void run() {
             Log.info("preloader starting");
             state = STATE_RUNNING;
+            shouldStop = false;
             for (int x = minX; x<=maxX; x++){
                 for (int y = minY; y <= maxY; y++){
                     String uri = z + "/" + x + "/" + y + ".png";
-                    Log.info("assert " + uri);
                     if (MapFile.fileExists(Configuration.getLocalPath() + uri)){
-                        Log.info("file exists");
                         presentTiles++;
                     }
                     else{
-                        Log.info("new file");
                         byte[] bytes = MapFile.getRemoteFile(Configuration.getMapServerUri() + uri);
                         if (bytes == null){
                             Log.error("could not get remote file");
@@ -155,17 +161,16 @@ public class Preloader {
                         }
                         fetchedTiles++;
                     }
-                    if (state.equals(STATE_IDLE)){
-                        preloadThread.interrupt();
-                        Log.info("preloader interrupted");
-                        preloadThread = null;
-                        return;
+                    if (shouldStop){
+                        Log.info("interrupting preloader");
+                        break;
                     }
                 }
+                if (shouldStop){
+                    break;
+                }
             }
-            state = STATE_IDLE;
-            preloadThread = null;
-            Log.info("preloader stopped");
+            preloadStopped();
         }
     }
 

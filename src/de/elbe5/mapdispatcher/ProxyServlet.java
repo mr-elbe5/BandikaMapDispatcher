@@ -1,5 +1,5 @@
 /*
- Bandika CMS - A Java based modular Content Management System
+ Bandika MapDispatcher - a proxy and preloader for OSM map tiles
  Copyright (C) 2009-2021 Michael Roennau
 
  This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or (at your option) any later version.
@@ -11,10 +11,13 @@ package de.elbe5.mapdispatcher;
 import de.elbe5.application.Configuration;
 import de.elbe5.base.log.Log;
 
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.OutputStream;
 
-public class ProxyServlet extends MapServlet {
+public class ProxyServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) {
@@ -43,6 +46,20 @@ public class ProxyServlet extends MapServlet {
             Log.error("could not send file");
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
+    }
+
+    protected boolean sendLocalFile(byte[] bytes, String name, HttpServletResponse response){
+        try {
+            response.setContentType("image/png");
+            response.setHeader("Content-Disposition", "filename=\"" + name + '"');
+            response.setHeader("Content-Length", Long.toString(bytes.length));
+            OutputStream out = response.getOutputStream();
+            out.write(bytes, 0, bytes.length);
+            out.flush();
+        } catch (IOException e) {
+            return false;
+        }
+        return true;
     }
 
 }
