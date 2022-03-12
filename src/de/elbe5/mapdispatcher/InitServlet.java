@@ -14,8 +14,9 @@ import de.elbe5.base.log.Log;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
 
-public class InitServlet extends MapServlet {
+public class InitServlet extends HttpServlet {
 
     @Override
     public void init(ServletConfig servletConfig) throws ServletException {
@@ -24,8 +25,8 @@ public class InitServlet extends MapServlet {
         Log.initLog("BandikaMapDispatcher");
         ServletContext context=servletConfig.getServletContext();
         Configuration.setConfigs(context);
-        Log.log("External carto server is " + Configuration.getCartoMapServerUri());
-        Log.log("External topo server is " + Configuration.getTopoMapServerUri());
+        Log.log("External map server is " + Configuration.getMapServerUri());
+        Log.log("remote timeout is " + Configuration.getRemoteTimeoutSecs());
         Log.log("BandikaMapDispatcher initialized");
     }
 

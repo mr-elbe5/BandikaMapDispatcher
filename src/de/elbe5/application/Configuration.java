@@ -8,24 +8,31 @@
  */
 package de.elbe5.application;
 
+import de.elbe5.base.log.Log;
+
 import javax.servlet.ServletContext;
 
 public class Configuration {
 
     static String localPath = "";
-    static String cartoMapServerUri ="";
-    static String topoMapServerUri ="";
+    static String mapServerUri ="";
+    static int remoteTimeoutSecs = 30;
+    static String token = "";
 
     public static String getLocalPath() {
         return localPath;
     }
 
-    public static String getCartoMapServerUri() {
-        return cartoMapServerUri;
+    public static String getMapServerUri() {
+        return mapServerUri;
     }
 
-    public static String getTopoMapServerUri() {
-        return topoMapServerUri;
+    public static int getRemoteTimeoutSecs() {
+        return remoteTimeoutSecs;
+    }
+
+    public static String getToken() {
+        return token;
     }
 
     // read from config file
@@ -37,8 +44,23 @@ public class Configuration {
 
     public static void setConfigs(ServletContext servletContext) {
         localPath = getSafeInitParameter(servletContext,"localPath");
-        cartoMapServerUri = getSafeInitParameter(servletContext,"defaultMapServerUri");
-        topoMapServerUri = getSafeInitParameter(servletContext,"topoMapServerUri");
+        if (!localPath.endsWith("/")){
+            localPath = localPath + "/";
+        }
+        mapServerUri = getSafeInitParameter(servletContext,"mapServerUri");
+        if (!mapServerUri.endsWith("/")){
+            mapServerUri = mapServerUri + "/";
+        }
+        try {
+            remoteTimeoutSecs = Integer.parseInt(getSafeInitParameter(servletContext, "remoteTimeoutSecs"));
+        }
+        catch (NumberFormatException e){
+            Log.error("bad firmat for remoteTimeoutSecs");
+        }
+        if (remoteTimeoutSecs == 0){
+            remoteTimeoutSecs = 30;
+        }
+        token = getSafeInitParameter(servletContext,"token");
     }
 
 }

@@ -6,7 +6,10 @@
         <element id="directory" name="classes">
           <element id="module-output" name="BandikaMapDispatcher" />
         </element>
-        <element id="directory" name="lib" />
+        <element id="directory" name="lib">
+          <element id="library" level="project" name="commons" />
+          <element id="library" level="project" name="json-simple-1.1" />
+        </element>
       </element>
       <element id="javaee-facet-resources" facet="BandikaMapDispatcher/web/Web" />
     </root>

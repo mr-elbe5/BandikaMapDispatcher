@@ -12,13 +12,22 @@
     </servlet>
 
     <servlet>
-        <servlet-name>map</servlet-name>
-        <servlet-class>de.elbe5.mapdispatcher.MapServlet</servlet-class>
+        <servlet-name>preload</servlet-name>
+        <servlet-class>de.elbe5.mapdispatcher.PreloadServlet</servlet-class>
+    </servlet>
+    <servlet>
+        <servlet-name>proxy</servlet-name>
+        <servlet-class>de.elbe5.mapdispatcher.ProxyServlet</servlet-class>
     </servlet>
 
     <servlet-mapping>
-        <servlet-name>map</servlet-name>
-        <url-pattern>/</url-pattern>
+        <servlet-name>preload</servlet-name>
+        <url-pattern>/preload</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>proxy</servlet-name>
+        <url-pattern>*.png</url-pattern>
     </servlet-mapping>
 
     <session-config>
