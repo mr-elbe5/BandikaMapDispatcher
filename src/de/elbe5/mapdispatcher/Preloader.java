@@ -27,7 +27,7 @@ public class Preloader {
 
     PreloadThread preloadThread = null;
 
-    int z = 0;
+    int zoom = 0;
     int minX = 0;
     int maxX = 0;
     int minY = 0;
@@ -40,31 +40,12 @@ public class Preloader {
 
     String state = STATE_IDLE;
 
-    void initValues(int zoom, int minX, int maxX, int minY, int maxY){
-        z = zoom;
-        this.minX = minX;
-        this.maxX = maxX;
-        if (this.maxX == -1){
-            this.maxX = (int) Math.pow(2.0, z) - 1;
-        }
-        this.minY = minY;
-        this.maxY = maxY;
-        if (this.maxY == -1){
-            this.maxY = (int) Math.pow(2.0, this.z) - 1;
-        }
-        long fx = this.maxX - this.minX + 1;
-        long fy = this.maxY - this.minY + 1;
-        allTiles = fx*fy;
-        presentTiles = 0;
-        fetchedTiles = 0;
-        errors = 0;
-    }
-
     void startPreload(RequestData rdata, HttpServletResponse response){
         String token = rdata.getString("token");
         if (token==null || !token.equals(Configuration.getToken())){
             Log.error("bad token");
-            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            rdata.put("token","wrong token");
+            showPreload(rdata, response);
             return;
         }
         if (preloadThread != null && state.equals(STATE_RUNNING)){
@@ -72,7 +53,28 @@ public class Preloader {
             preloadThread = null;
             state = STATE_IDLE;
         }
-        initValues(rdata.getInt("zoom", 0), rdata.getInt("minX", 0), rdata.getInt("maxX", -1), rdata.getInt("minY", 0), rdata.getInt("maxY", -1));
+        zoom = rdata.getInt("zoom", 0);
+        int maxSide = (int) Math.pow(2.0, zoom) - 1;
+        minX = Math.max(0, rdata.getInt("minX", 0));
+        maxX = Math.min(rdata.getInt("maxX", -1), maxSide);
+        if (maxX == -1){
+            maxX = maxSide;
+        }
+        minY = Math.max(0, rdata.getInt("minY", 0));
+        maxY = Math.min(rdata.getInt("maxY", -1), maxSide);
+        if (maxY == -1){
+            maxY = maxSide;
+        }
+        long fx = maxX - minX + 1;
+        long fy = maxY - minY + 1;
+        allTiles = fx*fy;
+        presentTiles = 0;
+        fetchedTiles = 0;
+        errors = 0;
+        rdata.put("minX", Integer.toString(minX));
+        rdata.put("maxX", Integer.toString(maxX));
+        rdata.put("minY", Integer.toString(minY));
+        rdata.put("maxY", Integer.toString(maxY));
         preloadThread = new PreloadThread();
         rdata.put("started", Boolean.toString(true));
         rdata.put("allTiles", Long.toString(allTiles));
@@ -145,7 +147,7 @@ public class Preloader {
             shouldStop = false;
             for (int x = minX; x<=maxX; x++){
                 for (int y = minY; y <= maxY; y++){
-                    String uri = z + "/" + x + "/" + y + ".png";
+                    String uri = zoom + "/" + x + "/" + y + ".png";
                     if (MapFile.fileExists(Configuration.getLocalPath() + uri)){
                         presentTiles++;
                     }
