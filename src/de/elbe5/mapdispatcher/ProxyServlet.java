@@ -16,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.StringTokenizer;
 
 public class ProxyServlet extends HttpServlet {
 
@@ -24,31 +25,71 @@ public class ProxyServlet extends HttpServlet {
         // uri should be like /out/z/x/y.png
         String uri = request.getRequestURI().substring(1);
         int lastSlash = uri.lastIndexOf("/");
-        if (lastSlash == -1 || !uri.endsWith(".png")){
+        if (!uri.endsWith(".png")){
             Log.error("bad uri");
             response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        String fileName = uri.substring(lastSlash+1);
-        byte[] bytes = MapFile.getLocalFile(Configuration.getLocalPath() + uri);
-        if (bytes == null){
-            bytes = MapFile.getRemoteFile(Configuration.getMapServerUri() + uri);
-            if (bytes == null){
+        StringTokenizer stk = new StringTokenizer(uri,"/",false);
+        int numTokens = stk.countTokens();
+        String fileName = "";
+        StringBuilder remoteFileName = new StringBuilder();
+        int zoom = 0;
+        for (int i = numTokens-1; stk.hasMoreTokens(); i--){
+            String s = stk.nextToken();
+            switch (i) {
+                case 2 -> {
+                    try {
+                        zoom = Integer.parseInt(s);
+                    } catch (Exception e) {
+                        Log.error("bad zoom");
+                    }
+                    remoteFileName.append(s);
+                }
+                case 1 -> {
+                    remoteFileName.append("/");
+                    remoteFileName.append(s);
+                }
+                case 0 -> {
+                    fileName = s;
+                    remoteFileName.append("/");
+                    remoteFileName.append(s);
+                }
+            }
+        }
+        if (zoom <= Configuration.getMapServerMaxZoom()) {
+            byte[] bytes = MapFile.getLocalFile(Configuration.getLocalPath() + uri);
+            if (bytes == null) {
+                bytes = MapFile.getRemoteFile(Configuration.getMapServerUri() + uri);
+                if (bytes == null) {
+                    Log.error("could not get remote file");
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    return;
+                }
+                if (!MapFile.saveLocalFile(Configuration.getLocalPath() + uri, bytes)) {
+                    Log.error("could not save file");
+                }
+            }
+            if (!sendFile(bytes, fileName, response)) {
+                Log.error("could not send local file");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            }
+        }
+        else{
+            byte[] bytes = MapFile.getRemoteFile(Configuration.getDetailServerUri() + remoteFileName);
+            if (bytes == null) {
                 Log.error("could not get remote file");
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                 return;
             }
-            if (!MapFile.saveLocalFile(Configuration.getLocalPath() + uri, bytes)){
-                Log.error("could not save file");
+            if (!sendFile(bytes, fileName, response)) {
+                Log.error("could not send remote file");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             }
-        }
-        if (!sendLocalFile(bytes, fileName, response)){
-            Log.error("could not send file");
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
         }
     }
 
-    protected boolean sendLocalFile(byte[] bytes, String name, HttpServletResponse response){
+    protected boolean sendFile(byte[] bytes, String name, HttpServletResponse response){
         try {
             response.setContentType("image/png");
             response.setHeader("Content-Disposition", "filename=\"" + name + '"');

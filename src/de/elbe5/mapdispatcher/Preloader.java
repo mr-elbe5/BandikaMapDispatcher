@@ -44,7 +44,7 @@ public class Preloader {
         String token = rdata.getString("token");
         if (token==null || !token.equals(Configuration.getToken())){
             Log.error("bad token");
-            rdata.put("token","wrong token");
+            rdata.put("message","wrong token");
             showPreload(rdata, response);
             return;
         }
@@ -54,6 +54,11 @@ public class Preloader {
             state = STATE_IDLE;
         }
         zoom = rdata.getInt("zoom", 0);
+        if (zoom>Configuration.getMapServerMaxZoom()){
+            rdata.put("message","zoom exceeds maxZoom " + Configuration.getMapServerMaxZoom());
+            showPreload(rdata, response);
+            return;
+        }
         int maxSide = (int) Math.pow(2.0, zoom) - 1;
         minX = Math.max(0, rdata.getInt("minX", 0));
         maxX = Math.min(rdata.getInt("maxX", -1), maxSide);

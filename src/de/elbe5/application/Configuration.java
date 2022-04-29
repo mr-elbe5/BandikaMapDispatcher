@@ -15,7 +15,11 @@ import javax.servlet.ServletContext;
 public class Configuration {
 
     static String localPath = "";
-    static String mapServerUri ="";
+    static String mapServerUri = "";
+
+    static String detailServerUri = "";
+
+    static int mapServerMaxZoom = 10;
     static int remoteTimeoutSecs = 30;
     static String token = "";
 
@@ -25,6 +29,14 @@ public class Configuration {
 
     public static String getMapServerUri() {
         return mapServerUri;
+    }
+
+    public static String getDetailServerUri() {
+        return detailServerUri;
+    }
+
+    public static int getMapServerMaxZoom() {
+        return mapServerMaxZoom;
     }
 
     public static int getRemoteTimeoutSecs() {
@@ -48,14 +60,24 @@ public class Configuration {
             localPath = localPath + "/";
         }
         mapServerUri = getSafeInitParameter(servletContext,"mapServerUri");
+        detailServerUri = getSafeInitParameter(servletContext,"detailServerUri");
         if (!mapServerUri.endsWith("/")){
             mapServerUri = mapServerUri + "/";
+        }
+        if (!detailServerUri.endsWith("/")){
+            detailServerUri = detailServerUri + "/";
+        }
+        try {
+            mapServerMaxZoom = Integer.parseInt(getSafeInitParameter(servletContext, "mapServerMaxZoom"));
+        }
+        catch (NumberFormatException e){
+            Log.error("bad format for mapServerMaxZoom");
         }
         try {
             remoteTimeoutSecs = Integer.parseInt(getSafeInitParameter(servletContext, "remoteTimeoutSecs"));
         }
         catch (NumberFormatException e){
-            Log.error("bad firmat for remoteTimeoutSecs");
+            Log.error("bad format for remoteTimeoutSecs");
         }
         if (remoteTimeoutSecs == 0){
             remoteTimeoutSecs = 30;

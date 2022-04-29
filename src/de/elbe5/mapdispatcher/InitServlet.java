@@ -26,6 +26,8 @@ public class InitServlet extends HttpServlet {
         ServletContext context=servletConfig.getServletContext();
         Configuration.setConfigs(context);
         Log.log("External map server is " + Configuration.getMapServerUri());
+        Log.log("Detail map server is " + Configuration.getDetailServerUri());
+        Log.log("max preloaded zoom is " + Configuration.getMapServerMaxZoom());
         Log.log("remote timeout is " + Configuration.getRemoteTimeoutSecs());
         Log.log("BandikaMapDispatcher initialized");
     }

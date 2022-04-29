@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License along with thi
     int minY = rdata.getInt("minY", 0);
     int maxY = rdata.getInt("maxY", -1);
     String token = rdata.getString("token");
+    String message = rdata.getString("message");
 %>
 <html>
 <head>
@@ -57,6 +58,10 @@ You should have received a copy of the GNU General Public License along with thi
             <div class = "mb-3">
                 <label for="token">Token</label>
                 <input class="form-control" type="text" id="token" name="token" value="<%=token%>"/>
+            </div>
+            <div class = "mb-3">
+                <label for="message">Message</label>
+                <input class="form-control" type="text" id="message" value="<%=message%>" disabled/>
             </div>
             <button type="submit" class="btn btn-primary" id="startButton">Start</button>
         </form>
